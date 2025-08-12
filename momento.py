@@ -2,6 +2,7 @@ import sqlite3
 import os
 import json
 import argparse
+import sys
 from datetime import datetime, timedelta
 from git import Repo, GitCommandError
 
@@ -152,7 +153,7 @@ def main():
     # log_work command
     log_parser = subparsers.add_parser('log_work', help='Log an AI action')
     log_parser.add_argument('message', help='Log message')
-    log_parser.add_argument('--extra', help='JSON string of extra info', default=None)
+    log_parser.add_argument('--extra', help='JSON string of extra info, e.g., --extra \'{"key": "value"}\'', default=None)
 
     # fetch_branch_logs command
     fetch_parser = subparsers.add_parser('fetch_branch_logs', help='Fetch branch logs')
@@ -170,11 +171,23 @@ def main():
     prune_size_parser = subparsers.add_parser('prune_by_size', help='Delete oldest logs if DB exceeds size (MB)')
     prune_size_parser.add_argument('max_size_mb', type=float, help='Max DB size in MB')
 
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except SystemExit:
+        if 'log_work' in sys.argv:
+            print("Error: Invalid arguments. Use: momento log_work \"string\" --extra valid_python_dict, e.g., --extra '{\"key\": \"value\"}'", file=sys.stderr)
+        else:
+            print("Error: Invalid arguments. Use: momento <command> [options]. Run 'momento --help' for details.", file=sys.stderr)
+        sys.exit(1)
 
     try:
         if args.command == 'log_work':
-            extra_info = json.loads(args.extra) if args.extra else None
+            extra_info = None
+            if args.extra:
+                try:
+                    extra_info = json.loads(args.extra)
+                except json.JSONDecodeError:
+                    raise ValueError("The --extra flag must be a valid JSON string, e.g., --extra '{\"key\": \"value\"}'")
             log_work(args.message, extra_info)
             print(f"Logged: {args.message}")
         elif args.command == 'fetch_branch_logs':
@@ -192,6 +205,3 @@ def main():
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-
-if __name__ == '__main__':
-    main()

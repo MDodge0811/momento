@@ -160,3 +160,5 @@ cython_debug/
 
 # VS Code
 .vscode/
+
+.momento-logs.db
