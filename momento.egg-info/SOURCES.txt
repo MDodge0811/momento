@@ -1,9 +1,0 @@
-README.md
-momento.py
-setup.py
-momento.egg-info/PKG-INFO
-momento.egg-info/SOURCES.txt
-momento.egg-info/dependency_links.txt
-momento.egg-info/entry_points.txt
-momento.egg-info/requires.txt
-momento.egg-info/top_level.txt
