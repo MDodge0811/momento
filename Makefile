@@ -42,7 +42,13 @@ lint:  ## Run linting checks
 		echo "flake8 not found. Install with: pip install flake8"; \
 	fi
 
-format:  ## Format code with black
+format:  ## Format code with black and isort
+	@echo "Running isort..."
+	@if command -v isort >/dev/null 2>&1; then \
+		isort .; \
+	else \
+		echo "isort not found. Install with: pip install isort"; \
+	fi
 	@echo "Running black..."
 	@if command -v black >/dev/null 2>&1; then \
 		black .; \
@@ -50,12 +56,26 @@ format:  ## Format code with black
 		echo "black not found. Install with: pip install black"; \
 	fi
 
-format-check:  ## Check if code is formatted with black
+format-check:  ## Check if code is formatted with black and isort
+	@echo "Checking import sorting..."
+	@if command -v isort >/dev/null 2>&1; then \
+		isort --check-only --diff .; \
+	else \
+		echo "isort not found. Install with: pip install isort"; \
+	fi
 	@echo "Checking code formatting..."
 	@if command -v black >/dev/null 2>&1; then \
 		black --check .; \
 	else \
 		echo "black not found. Install with: pip install black"; \
+	fi
+
+imports:  ## Sort imports with isort
+	@echo "Sorting imports..."
+	@if command -v isort >/dev/null 2>&1; then \
+		isort .; \
+	else \
+		echo "isort not found. Install with: pip install isort"; \
 	fi
 
 check: test lint  ## Run tests and linting

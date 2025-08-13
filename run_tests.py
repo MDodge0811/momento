@@ -4,9 +4,9 @@ Test runner script for Eidex library.
 Run with: python run_tests.py
 """
 
+import os
 import subprocess
 import sys
-import os
 
 
 def run_tests():

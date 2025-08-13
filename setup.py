@@ -17,6 +17,7 @@ setup(
             "pytest-mock>=3.10.0",
             "flake8>=5.0.0",
             "black>=25.0.0",
+            "isort>=6.0.0",
         ],
     },
     description="Branch-aware AI logging for development workflows",

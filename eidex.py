@@ -1,10 +1,11 @@
-import sqlite3
-import os
-import json
 import argparse
+import json
+import os
+import sqlite3
 import sys
 from datetime import datetime, timedelta
-from git import Repo, GitCommandError
+
+from git import GitCommandError, Repo
 
 
 def get_repo_root():
