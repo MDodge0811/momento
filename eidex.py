@@ -17,7 +17,7 @@ def get_repo_root():
 def get_db_path():
     """Get the path to the repo-specific SQLite DB."""
     repo_root = get_repo_root()
-    return os.path.join(repo_root, '.momento-logs.db')
+    return os.path.join(repo_root, '.eidex-logs.db')
 
 def ensure_db():
     """Initialize SQLite DB with table and indexes, add to .gitignore."""
@@ -39,7 +39,7 @@ def ensure_db():
     
     # Add to .gitignore
     gitignore_path = os.path.join(get_repo_root(), '.gitignore')
-    db_path_relative = '.momento-logs.db'
+    db_path_relative = '.eidex-logs.db'
     if os.path.exists(gitignore_path):
         with open(gitignore_path, 'r+') as f:
             content = f.read()
@@ -55,7 +55,7 @@ def get_current_branch():
         repo = Repo(search_parent_directories=True)
         return repo.active_branch.name
     except GitCommandError:
-        raise ValueError("Not in a Git repository. Momento requires a Git repo.")
+        raise ValueError("Not in a Git repository. Eidex requires a Git repo.")
 
 def log_work(message: str, extra_info: dict = None):
     """Log an AI action for the current branch."""
@@ -74,6 +74,11 @@ def fetch_branch_logs(branch: str = None, limit: int = 50) -> list[dict]:
     ensure_db()
     if branch is None:
         branch = get_current_branch()
+    
+    # Validate limit parameter
+    if limit <= 0:
+        return []
+    
     conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute('''
@@ -121,33 +126,10 @@ def prune_old_logs(days: int) -> int:
     conn.close()
     return deleted_count
 
-def prune_by_size(max_size_mb: float) -> int:
-    """Delete oldest logs until DB size is under max_size_mb."""
-    ensure_db()
-    db_path = get_db_path()
-    current_size_mb = os.path.getsize(db_path) / (1024 * 1024)
-    if current_size_mb <= max_size_mb:
-        return 0
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    deleted_count = 0
-    while os.path.getsize(db_path) / (1024 * 1024) > max_size_mb:
-        cursor.execute('''
-            DELETE FROM logs
-            WHERE id IN (
-                SELECT id FROM logs
-                ORDER BY timestamp ASC
-                LIMIT 100
-            )
-        ''')
-        deleted_count += cursor.rowcount
-        conn.commit()
-    conn.execute('VACUUM')
-    conn.close()
-    return deleted_count
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Momento: Branch-aware AI logging')
+    parser = argparse.ArgumentParser(description='Eidex: Branch-aware AI logging')
     subparsers = parser.add_subparsers(dest='command', required=True)
 
     # log_work command
@@ -167,17 +149,15 @@ def main():
     prune_old_parser = subparsers.add_parser('prune_old_logs', help='Delete logs older than X days')
     prune_old_parser.add_argument('days', type=int, help='Days to keep')
 
-    # prune_by_size command
-    prune_size_parser = subparsers.add_parser('prune_by_size', help='Delete oldest logs if DB exceeds size (MB)')
-    prune_size_parser.add_argument('max_size_mb', type=float, help='Max DB size in MB')
+
 
     try:
         args = parser.parse_args()
     except SystemExit:
         if 'log_work' in sys.argv:
-            print("Error: Invalid arguments. Use: momento log_work \"string\" --extra valid_python_dict, e.g., --extra '{\"key\": \"value\"}'", file=sys.stderr)
+            print("Error: Invalid arguments. Use: eidex log_work \"string\" --extra valid_python_dict, e.g., --extra '{\"key\": \"value\"}'", file=sys.stderr)
         else:
-            print("Error: Invalid arguments. Use: momento <command> [options]. Run 'momento --help' for details.", file=sys.stderr)
+            print("Error: Invalid arguments. Use: eidex <command> [options]. Run 'eidex --help' for details.", file=sys.stderr)
         sys.exit(1)
 
     try:
@@ -199,9 +179,7 @@ def main():
         elif args.command == 'prune_old_logs':
             deleted = prune_old_logs(args.days)
             print(f"Deleted {deleted} logs older than {args.days} days.")
-        elif args.command == 'prune_by_size':
-            deleted = prune_by_size(args.max_size_mb)
-            print(f"Deleted {deleted} logs to reduce DB size.")
+
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
