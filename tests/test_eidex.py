@@ -46,16 +46,18 @@ class TestEidex:
 
     def test_get_db_path(self):
         """Test database path generation."""
-        with patch("eidex.get_repo_root") as mock_repo:
+        with patch("eidex.get_repo_root") as mock_repo, \
+             patch("eidex.get_config_value") as mock_config:
             mock_repo.return_value = "/test/repo"
+            mock_config.return_value = ".eidex-logs.db"
             db_path = eidex.get_db_path()
-            assert db_path == "/test/repo/.eidex-logs.db"
+            assert db_path == "/test/repo/.eidex/.eidex-logs.db"
 
     def test_ensure_db_creates_database(self):
         """Test database creation and initialization."""
         eidex.ensure_db()
 
-        db_path = os.path.join(self.temp_dir, ".eidex-logs.db")
+        db_path = os.path.join(self.temp_dir, ".eidex", ".eidex-logs.db")
         assert os.path.exists(db_path)
 
         # Check table structure
@@ -89,21 +91,21 @@ class TestEidex:
 
         with open(gitignore_path, "r") as f:
             content = f.read()
-            assert ".eidex-logs.db" in content
+            assert ".eidex/" in content
 
     def test_ensure_db_doesnt_duplicate_gitignore_entry(self):
         """Test that .gitignore entries aren't duplicated."""
         # Add entry manually first
         gitignore_path = os.path.join(self.temp_dir, ".gitignore")
         with open(gitignore_path, "w") as f:
-            f.write(".eidex-logs.db\n")
+            f.write(".eidex/\n")
 
         eidex.ensure_db()
 
         with open(gitignore_path, "r") as f:
             content = f.read()
             # Should only appear once
-            assert content.count(".eidex-logs.db") == 1
+            assert content.count(".eidex/") == 1
 
     def test_get_current_branch(self):
         """Test getting current git branch."""
@@ -129,7 +131,7 @@ class TestEidex:
         eidex.log_work("Test message")
 
         # Check database
-        db_path = os.path.join(self.temp_dir, ".eidex-logs.db")
+        db_path = os.path.join(self.temp_dir, ".eidex", ".eidex-logs.db")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute(
@@ -150,7 +152,7 @@ class TestEidex:
         eidex.log_work("Test message", extra_info)
 
         # Check database
-        db_path = os.path.join(self.temp_dir, ".eidex-logs.db")
+        db_path = os.path.join(self.temp_dir, ".eidex", ".eidex-logs.db")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute(
@@ -235,7 +237,7 @@ class TestEidex:
         eidex.log_work("Recent message")
 
         # Manually add old log to database
-        db_path = os.path.join(self.temp_dir, ".eidex-logs.db")
+        db_path = os.path.join(self.temp_dir, ".eidex", ".eidex-logs.db")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         old_date = (datetime.now() - timedelta(days=10)).isoformat()

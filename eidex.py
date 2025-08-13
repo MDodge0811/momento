@@ -5,17 +5,23 @@ import sqlite3
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Optional
 
 from git import GitCommandError, Repo
 
 # TOML parsing with fallback for different Python versions
+_tomllib = None
 try:
     import tomllib  # Python 3.11+
+
+    _tomllib = tomllib
 except ImportError:
     try:
-        import tomli as tomllib  # Python 3.6-3.10
+        import tomli  # Python 3.6-3.10
+
+        _tomllib = tomli
     except ImportError:
-        tomllib = None
+        pass
 
 
 # Default configuration values
@@ -24,17 +30,17 @@ DEFAULT_CONFIG = {
         "filename": ".eidex-logs.db",
         "max_logs_per_branch": 1000,
         "auto_cleanup_old_logs": True,
-        "cleanup_days_threshold": 90
+        "cleanup_days_threshold": 90,
     },
     "logging": {
         "default_limit": 50,
         "timestamp_format": "iso",
-        "include_branch_in_output": True
+        "include_branch_in_output": True,
     },
     "git": {
         "auto_add_to_gitignore": True,
-        "gitignore_entries": [".eidex/", ".eidex-cache/"]
-    }
+        "gitignore_entries": [".eidex/", ".eidex-cache/"],
+    },
 }
 
 
@@ -55,8 +61,8 @@ def ensure_eidex_directory():
 def create_default_config():
     """Create a default eidex.toml configuration file."""
     config_path = get_config_path()
-    
-    config_content = '''# Eidex Configuration File
+
+    config_content = """# Eidex Configuration File
 # This file contains customizable settings for the Eidex logging system
 
 [database]
@@ -82,11 +88,11 @@ include_branch_in_output = true
 auto_add_to_gitignore = true
 # Additional entries to add to .gitignore
 gitignore_entries = [".eidex.toml", ".eidex/"]
-'''
-    
+"""
+
     with open(config_path, "w") as f:
         f.write(config_content)
-    
+
     if os.path.exists(config_path):
         print(f"Updated configuration file: {config_path}")
     else:
@@ -98,10 +104,10 @@ def create_ai_context_file():
     """Create a comprehensive AI context file for Eidex usage."""
     # Ensure .eidex directory exists
     ensure_eidex_directory()
-    
+
     context_path = os.path.join(get_repo_root(), ".eidex", "AI_CONTEXT.md")
-    
-    context_content = '''# Eidex AI Agent Context Guide
+
+    context_content = """# Eidex AI Agent Context Guide
 
 ## 🎯 What is Eidex?
 
@@ -439,42 +445,44 @@ print("Work distribution:", work_types)
 ---
 
 **Remember**: Eidex is designed to be simple and unobtrusive. Use it to track your AI-assisted development work, and let it help you maintain a clear history of what's been accomplished in your repository.
-'''
-    
+"""
+
     with open(context_path, "w") as f:
         f.write(context_content)
-    
+
     return context_path
 
 
 def load_config():
     """Load configuration from eidex.toml, creating default if needed."""
     config_path = get_config_path()
-    
+
     # Create default config if it doesn't exist
     if not os.path.exists(config_path):
         create_default_config()
-    
+
     # Create AI context file if it doesn't exist
     context_path = os.path.join(get_repo_root(), ".eidex", "AI_CONTEXT.md")
     if not os.path.exists(context_path):
         create_ai_context_file()
         print(f"Created AI context file: {context_path}")
-        print("AI agents can now reference this file for comprehensive usage instructions.")
-    
+        print(
+            "AI agents can now reference this file for comprehensive usage instructions."
+        )
+
     # Parse TOML file if available
-    if tomllib is not None:
+    if _tomllib is not None:
         try:
             with open(config_path, "rb") as f:
-                file_config = tomllib.load(f)
-            
+                file_config = _tomllib.load(f)
+
             # Merge with defaults (file config takes precedence)
             merged_config = {}
             for section, values in DEFAULT_CONFIG.items():
                 merged_config[section] = DEFAULT_CONFIG[section].copy()
                 if section in file_config:
                     merged_config[section].update(file_config[section])
-            
+
             return merged_config
         except Exception as e:
             print(f"Warning: Could not parse {config_path}: {e}")
@@ -514,7 +522,7 @@ def ensure_db():
     """Initialize SQLite DB with table and indexes, add to .gitignore."""
     # Ensure .eidex directory exists
     ensure_eidex_directory()
-    
+
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -539,7 +547,7 @@ def ensure_db():
     if get_config_value("git", "auto_add_to_gitignore", True):
         gitignore_path = os.path.join(get_repo_root(), ".gitignore")
         gitignore_entries = get_config_value("git", "gitignore_entries", [".eidex/"])
-        
+
         if os.path.exists(gitignore_path):
             with open(gitignore_path, "r+") as f:
                 content = f.read()
@@ -574,7 +582,7 @@ def log_work(message: str, extra_info: dict | None = None):
     )
     conn.commit()
     conn.close()
-    
+
     # Auto-cleanup old logs if configured
     if get_config_value("database", "auto_cleanup_old_logs", True):
         cleanup_threshold = get_config_value("database", "cleanup_days_threshold", 90)
@@ -583,7 +591,7 @@ def log_work(message: str, extra_info: dict | None = None):
         except Exception:
             # Don't fail logging if cleanup fails
             pass
-    
+
     # Enforce maximum logs per branch if configured
     max_logs = get_config_value("database", "max_logs_per_branch", 1000)
     if max_logs > 0:
@@ -592,7 +600,7 @@ def log_work(message: str, extra_info: dict | None = None):
             cursor = conn.cursor()
             cursor.execute(
                 "DELETE FROM logs WHERE branch = ? AND id NOT IN (SELECT id FROM logs WHERE branch = ? ORDER BY timestamp DESC LIMIT ?)",
-                (branch, branch, max_logs)
+                (branch, branch, max_logs),
             )
             conn.commit()
             conn.close()
@@ -601,7 +609,9 @@ def log_work(message: str, extra_info: dict | None = None):
             pass
 
 
-def fetch_branch_logs(branch: str | None = None, limit: int = None) -> list[dict]:
+def fetch_branch_logs(
+    branch: Optional[str] = None, limit: Optional[int] = None
+) -> list[dict]:
     """Fetch logs for the current or specified branch, newest first."""
     ensure_db()
     if branch is None:
@@ -703,19 +713,13 @@ def main():
     prune_old_parser.add_argument("days", type=int, help="Days to keep")
 
     # show_config command
-    subparsers.add_parser(
-        "show_config", help="Show current configuration"
-    )
+    subparsers.add_parser("show_config", help="Show current configuration")
 
     # init_config command
-    subparsers.add_parser(
-        "init_config", help="Create or recreate configuration file"
-    )
+    subparsers.add_parser("init_config", help="Create or recreate configuration file")
 
     # create_context command
-    subparsers.add_parser(
-        "create_context", help="Create or recreate AI context file"
-    )
+    subparsers.add_parser("create_context", help="Create or recreate AI context file")
 
     try:
         args = parser.parse_args()
@@ -762,7 +766,9 @@ def main():
         elif args.command == "create_context":
             context_path = create_ai_context_file()
             print(f"AI context file created: {context_path}")
-            print("AI agents can now reference this file for comprehensive usage instructions.")
+            print(
+                "AI agents can now reference this file for comprehensive usage instructions."
+            )
 
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
