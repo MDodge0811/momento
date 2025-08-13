@@ -37,12 +37,42 @@ clean:  ## Clean up generated files
 lint:  ## Run linting checks
 	@echo "Running flake8..."
 	@if command -v flake8 >/dev/null 2>&1; then \
-		flake8 eidex.py tests/; \
+		flake8 .; \
 	else \
 		echo "flake8 not found. Install with: pip install flake8"; \
 	fi
 
-format:  ## Format code with black
+lint-check:  ## Check linting without fixing
+	@echo "Checking code quality with flake8..."
+	@if command -v flake8 >/dev/null 2>&1; then \
+		flake8 --count --statistics .; \
+	else \
+		echo "flake8 not found. Install with: pip install flake8"; \
+	fi
+
+type-check:  ## Run type checking with mypy
+	@echo "Running type checking with mypy..."
+	@if command -v mypy >/dev/null 2>&1; then \
+		mypy .; \
+	else \
+		echo "mypy not found. Install with: pip install mypy"; \
+	fi
+
+type-check-strict:  ## Run strict type checking with mypy
+	@echo "Running strict type checking with mypy..."
+	@if command -v mypy >/dev/null 2>&1; then \
+		mypy --strict .; \
+	else \
+		echo "mypy not found. Install with: pip install mypy"; \
+	fi
+
+format:  ## Format code with black and isort
+	@echo "Running isort..."
+	@if command -v isort >/dev/null 2>&1; then \
+		isort .; \
+	else \
+		echo "isort not found. Install with: pip install isort"; \
+	fi
 	@echo "Running black..."
 	@if command -v black >/dev/null 2>&1; then \
 		black .; \
@@ -50,7 +80,13 @@ format:  ## Format code with black
 		echo "black not found. Install with: pip install black"; \
 	fi
 
-format-check:  ## Check if code is formatted with black
+format-check:  ## Check if code is formatted with black and isort
+	@echo "Checking import sorting..."
+	@if command -v isort >/dev/null 2>&1; then \
+		isort --check-only --diff .; \
+	else \
+		echo "isort not found. Install with: pip install isort"; \
+	fi
 	@echo "Checking code formatting..."
 	@if command -v black >/dev/null 2>&1; then \
 		black --check .; \
@@ -58,7 +94,15 @@ format-check:  ## Check if code is formatted with black
 		echo "black not found. Install with: pip install black"; \
 	fi
 
-check: test lint  ## Run tests and linting
+imports:  ## Sort imports with isort
+	@echo "Sorting imports..."
+	@if command -v isort >/dev/null 2>&1; then \
+		isort .; \
+	else \
+		echo "isort not found. Install with: pip install isort"; \
+	fi
+
+check: test lint type-check  ## Run tests, linting, and type checking
 	@echo "✅ All checks passed!"
 
 dev-setup: install-test-deps install  ## Set up development environment
