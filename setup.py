@@ -16,17 +16,13 @@ setup(
             "pytest-cov>=4.0.0",
             "pytest-mock>=3.10.0",
             "flake8>=5.0.0",
-            "black>=22.0.0",
-        ]
+            "black>=25.0.0",
+        ],
     },
     description="Branch-aware AI logging for development workflows",
     author="Your Name",
     author_email="your.email@example.com",
-    entry_points={
-        "console_scripts": [
-            "eidex = eidex:main"
-        ]
-    },
+    entry_points={"console_scripts": ["eidex = eidex:main"]},
     python_requires=">=3.6",
     classifiers=[
         "Development Status :: 4 - Beta",

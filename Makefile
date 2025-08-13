@@ -45,7 +45,15 @@ lint:  ## Run linting checks
 format:  ## Format code with black
 	@echo "Running black..."
 	@if command -v black >/dev/null 2>&1; then \
-		black eidex.py tests/; \
+		black .; \
+	else \
+		echo "black not found. Install with: pip install black"; \
+	fi
+
+format-check:  ## Check if code is formatted with black
+	@echo "Checking code formatting..."
+	@if command -v black >/dev/null 2>&1; then \
+		black --check .; \
 	else \
 		echo "black not found. Install with: pip install black"; \
 	fi
