@@ -19,6 +19,7 @@ setup(
             "black>=25.0.0",
             "isort>=6.0.0",
             "mypy>=1.17.0",
+            "tomli>=1.2.0",
         ],
     },
     description="Branch-aware AI logging for development workflows",

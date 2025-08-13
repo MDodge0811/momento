@@ -4,8 +4,124 @@ import os
 import sqlite3
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from git import GitCommandError, Repo
+
+# TOML parsing with fallback for different Python versions
+try:
+    import tomllib  # Python 3.11+
+except ImportError:
+    try:
+        import tomli as tomllib  # Python 3.6-3.10
+    except ImportError:
+        tomllib = None
+
+
+# Default configuration values
+DEFAULT_CONFIG = {
+    "database": {
+        "filename": ".eidex-logs.db",
+        "max_logs_per_branch": 1000,
+        "auto_cleanup_old_logs": True,
+        "cleanup_days_threshold": 90
+    },
+    "logging": {
+        "default_limit": 50,
+        "timestamp_format": "iso",
+        "include_branch_in_output": True
+    },
+    "git": {
+        "auto_add_to_gitignore": True,
+        "gitignore_entries": [".eidex-logs.db", ".eidex-cache/"]
+    }
+}
+
+
+def get_config_path():
+    """Get the path to the eidex configuration file."""
+    repo_root = get_repo_root()
+    return os.path.join(repo_root, "eidex.toml")
+
+
+def create_default_config():
+    """Create a default eidex.toml configuration file."""
+    config_path = get_config_path()
+    
+    config_content = '''# Eidex Configuration File
+# This file contains customizable settings for the Eidex logging system
+
+[database]
+# Database file name (relative to repo root)
+filename = ".eidex-logs.db"
+# Maximum number of logs to keep per branch
+max_logs_per_branch = 1000
+# Automatically clean up old logs
+auto_cleanup_old_logs = true
+# Days threshold for automatic cleanup
+cleanup_days_threshold = 90
+
+[logging]
+# Default number of logs to fetch
+default_limit = 50
+# Timestamp format: "iso" or "human"
+timestamp_format = "iso"
+# Include branch name in output
+include_branch_in_output = true
+
+[git]
+# Automatically add database to .gitignore
+auto_add_to_gitignore = true
+# Additional entries to add to .gitignore
+gitignore_entries = [".eidex.toml", ".eidex-logs.db", ".eidex-cache/"]
+'''
+    
+    with open(config_path, "w") as f:
+        f.write(config_content)
+    
+    if os.path.exists(config_path):
+        print(f"Updated configuration file: {config_path}")
+    else:
+        print(f"Created default configuration file: {config_path}")
+    print("You can customize these settings by editing eidex.toml")
+
+
+def load_config():
+    """Load configuration from eidex.toml, creating default if needed."""
+    config_path = get_config_path()
+    
+    # Create default config if it doesn't exist
+    if not os.path.exists(config_path):
+        create_default_config()
+    
+    # Parse TOML file if available
+    if tomllib is not None:
+        try:
+            with open(config_path, "rb") as f:
+                file_config = tomllib.load(f)
+            
+            # Merge with defaults (file config takes precedence)
+            merged_config = {}
+            for section, values in DEFAULT_CONFIG.items():
+                merged_config[section] = DEFAULT_CONFIG[section].copy()
+                if section in file_config:
+                    merged_config[section].update(file_config[section])
+            
+            return merged_config
+        except Exception as e:
+            print(f"Warning: Could not parse {config_path}: {e}")
+            print("Using default configuration.")
+            return DEFAULT_CONFIG
+    else:
+        print("Warning: TOML parsing not available. Install tomli for Python < 3.11")
+        print("Using default configuration.")
+        return DEFAULT_CONFIG
+
+
+def get_config_value(section: str, key: str, default=None):
+    """Get a configuration value from the specified section."""
+    config = load_config()
+    return config.get(section, {}).get(key, default)
 
 
 def get_repo_root():
@@ -22,7 +138,8 @@ def get_repo_root():
 def get_db_path():
     """Get the path to the repo-specific SQLite DB."""
     repo_root = get_repo_root()
-    return os.path.join(repo_root, ".eidex-logs.db")
+    db_filename = get_config_value("database", "filename", ".eidex-logs.db")
+    return os.path.join(repo_root, db_filename)
 
 
 def ensure_db():
@@ -47,17 +164,21 @@ def ensure_db():
     conn.commit()
     conn.close()
 
-    # Add to .gitignore
-    gitignore_path = os.path.join(get_repo_root(), ".gitignore")
-    db_path_relative = ".eidex-logs.db"
-    if os.path.exists(gitignore_path):
-        with open(gitignore_path, "r+") as f:
-            content = f.read()
-            if db_path_relative not in content:
-                f.write(f"\n{db_path_relative}\n")
-    else:
-        with open(gitignore_path, "w") as f:
-            f.write(f"{db_path_relative}\n")
+    # Add to .gitignore if configured to do so
+    if get_config_value("git", "auto_add_to_gitignore", True):
+        gitignore_path = os.path.join(get_repo_root(), ".gitignore")
+        gitignore_entries = get_config_value("git", "gitignore_entries", [".eidex-logs.db"])
+        
+        if os.path.exists(gitignore_path):
+            with open(gitignore_path, "r+") as f:
+                content = f.read()
+                for entry in gitignore_entries:
+                    if entry not in content:
+                        f.write(f"\n{entry}\n")
+        else:
+            with open(gitignore_path, "w") as f:
+                for entry in gitignore_entries:
+                    f.write(f"{entry}\n")
 
 
 def get_current_branch():
@@ -82,13 +203,42 @@ def log_work(message: str, extra_info: dict | None = None):
     )
     conn.commit()
     conn.close()
+    
+    # Auto-cleanup old logs if configured
+    if get_config_value("database", "auto_cleanup_old_logs", True):
+        cleanup_threshold = get_config_value("database", "cleanup_days_threshold", 90)
+        try:
+            prune_old_logs(cleanup_threshold)
+        except Exception:
+            # Don't fail logging if cleanup fails
+            pass
+    
+    # Enforce maximum logs per branch if configured
+    max_logs = get_config_value("database", "max_logs_per_branch", 1000)
+    if max_logs > 0:
+        try:
+            conn = sqlite3.connect(get_db_path())
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM logs WHERE branch = ? AND id NOT IN (SELECT id FROM logs WHERE branch = ? ORDER BY timestamp DESC LIMIT ?)",
+                (branch, branch, max_logs)
+            )
+            conn.commit()
+            conn.close()
+        except Exception:
+            # Don't fail logging if cleanup fails
+            pass
 
 
-def fetch_branch_logs(branch: str | None = None, limit: int = 50) -> list[dict]:
+def fetch_branch_logs(branch: str | None = None, limit: int = None) -> list[dict]:
     """Fetch logs for the current or specified branch, newest first."""
     ensure_db()
     if branch is None:
         branch = get_current_branch()
+
+    # Use configured default limit if none provided
+    if limit is None:
+        limit = get_config_value("logging", "default_limit", 50)
 
     # Validate limit parameter
     if limit <= 0:
@@ -167,7 +317,7 @@ def main():
         "--branch", help="Branch name (default: current)", default=None
     )
     fetch_parser.add_argument(
-        "--limit", type=int, help="Max logs to return", default=50
+        "--limit", type=int, help="Max logs to return", default=None
     )
 
     # cleanup_deleted_branches command
@@ -180,6 +330,16 @@ def main():
         "prune_old_logs", help="Delete logs older than X days"
     )
     prune_old_parser.add_argument("days", type=int, help="Days to keep")
+
+    # show_config command
+    subparsers.add_parser(
+        "show_config", help="Show current configuration"
+    )
+
+    # init_config command
+    subparsers.add_parser(
+        "init_config", help="Create or recreate configuration file"
+    )
 
     try:
         args = parser.parse_args()
@@ -217,6 +377,12 @@ def main():
         elif args.command == "prune_old_logs":
             deleted = prune_old_logs(args.days)
             print(f"Deleted {deleted} logs older than {args.days} days.")
+        elif args.command == "show_config":
+            config = load_config()
+            print("Current Eidex Configuration:")
+            print(json.dumps(config, indent=2))
+        elif args.command == "init_config":
+            create_default_config()
 
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)

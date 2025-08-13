@@ -162,3 +162,7 @@ cython_debug/
 .vscode/
 
 .eidex-logs.db
+
+.eidex-cache/
+
+.eidex.toml
