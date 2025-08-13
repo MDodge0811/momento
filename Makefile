@@ -37,7 +37,15 @@ clean:  ## Clean up generated files
 lint:  ## Run linting checks
 	@echo "Running flake8..."
 	@if command -v flake8 >/dev/null 2>&1; then \
-		flake8 eidex.py tests/; \
+		flake8 .; \
+	else \
+		echo "flake8 not found. Install with: pip install flake8"; \
+	fi
+
+lint-check:  ## Check linting without fixing
+	@echo "Checking code quality with flake8..."
+	@if command -v flake8 >/dev/null 2>&1; then \
+		flake8 --count --statistics .; \
 	else \
 		echo "flake8 not found. Install with: pip install flake8"; \
 	fi

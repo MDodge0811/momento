@@ -4,3 +4,4 @@ pytest-mock>=3.10.0
 gitpython>=3.1.0
 black>=25.0.0
 isort>=6.0.0
+flake8>=7.0.0

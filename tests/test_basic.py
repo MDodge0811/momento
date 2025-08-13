@@ -2,6 +2,8 @@
 Basic tests to verify the test infrastructure is working.
 """
 
+import pytest
+
 
 def test_import():
     """Test that we can import the eidex module."""
