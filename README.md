@@ -1,11 +1,11 @@
 # Eidex
 
-**Eidex** is a lightweight, branch-aware logging library for AI-assisted coding workflows. It allows developers to log actions performed by AI tools (e.g., code generation, refactoring) in a Git repository, associating logs with the current Git branch. Logs are stored in a repo-specific SQLite database (`.eidex-logs.db`), which is automatically git-ignored to prevent committing sensitive data. The library provides a simple command-line interface (CLI) and Python API, making it easy to integrate with AI tools like Cursor.
+**Eidex** is a lightweight, branch-aware logging library for AI-assisted coding workflows. It allows developers to log actions performed by AI tools (e.g., code generation, refactoring) in a Git repository, associating logs with the current Git branch. Logs are stored in a repo-specific SQLite database (`.eidex/.eidex-logs.db`), which is automatically git-ignored to prevent committing sensitive data. The library provides a simple command-line interface (CLI) and Python API, making it easy to integrate with AI tools like Cursor.
 
 ## Features
 
 - **Branch-Aware Logging**: Logs are tied to the current Git branch, ensuring context is preserved when switching branches.
-- **Repo-Specific Storage**: Each Git repository has its own `.eidex-logs.db`, preventing cross-repo interference.
+- **Repo-Specific Storage**: Each Git repository has its own `.eidex/.eidex-logs.db`, preventing cross-repo interference.
 - **Simple CLI**: Run commands like `eidex log_work "AI refactored code"` from any Git repo.
 - **Python API**: Programmatically log and retrieve actions with `eidex.log_work()` and `eidex.fetch_branch_logs()`.
 - **Automatic Cleanup**: Delete logs for branches that no longer exist.
@@ -51,7 +51,7 @@ pip install eidex
 
 ## Usage
 
-Momento provides both a CLI and a Python API for logging and retrieving AI actions in a Git repository. Logs are stored in `.momento-logs.db` in the repo’s root, automatically added to `.gitignore`.
+Momento provides both a CLI and a Python API for logging and retrieving AI actions in a Git repository. Logs are stored in `.eidex/.eidex-logs.db` in the repo’s root, automatically added to `.gitignore`.
 
 ### Command-Line Interface (CLI)
 Run `eidex` commands from any Git repository:
@@ -125,7 +125,7 @@ logs = eidex.fetch_branch_logs()
 ```
 
 ## How It Works
-- **Storage**: Logs are stored in a SQLite database (`.eidex-logs.db`) in the root of the current Git repository, ensuring isolation between repos.
+- **Storage**: Logs are stored in a SQLite database (`.eidex/.eidex-logs.db`) in the .eidex/ directory, ensuring isolation between repos.
 - **Branch Detection**: Uses `gitpython` to detect the current branch. If not in a Git repo, commands fail with an error.
 - **Automatic Setup**: The database and `.gitignore` entry are created on first use.
 - **Log Structure**: Each log entry includes:
@@ -139,7 +139,7 @@ logs = eidex.fetch_branch_logs()
 - **Pruning**:
   - `eidex prune_old_logs 90`: Deletes logs older than 90 days.
   - `eidex prune_by_size 5.0`: Deletes oldest logs if the database exceeds 5MB, with automatic `VACUUM` to shrink the file.
-- **Sharing**: Manually copy `.eidex-logs.db` to another repo for sharing logs.
+- **Sharing**: Manually copy `.eidex/.eidex-logs.db` to another repo for sharing logs.
 
 ## Testing
 Test in a Git repository:

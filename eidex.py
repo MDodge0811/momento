@@ -33,7 +33,7 @@ DEFAULT_CONFIG = {
     },
     "git": {
         "auto_add_to_gitignore": True,
-        "gitignore_entries": [".eidex-logs.db", ".eidex-cache/"]
+        "gitignore_entries": [".eidex/", ".eidex-cache/"]
     }
 }
 
@@ -44,6 +44,14 @@ def get_config_path():
     return os.path.join(repo_root, "eidex.toml")
 
 
+def ensure_eidex_directory():
+    """Ensure the .eidex directory exists."""
+    eidex_dir = os.path.join(get_repo_root(), ".eidex")
+    if not os.path.exists(eidex_dir):
+        os.makedirs(eidex_dir)
+    return eidex_dir
+
+
 def create_default_config():
     """Create a default eidex.toml configuration file."""
     config_path = get_config_path()
@@ -52,7 +60,7 @@ def create_default_config():
 # This file contains customizable settings for the Eidex logging system
 
 [database]
-# Database file name (relative to repo root)
+# Database file name (relative to .eidex directory)
 filename = ".eidex-logs.db"
 # Maximum number of logs to keep per branch
 max_logs_per_branch = 1000
@@ -73,7 +81,7 @@ include_branch_in_output = true
 # Automatically add database to .gitignore
 auto_add_to_gitignore = true
 # Additional entries to add to .gitignore
-gitignore_entries = [".eidex.toml", ".eidex-logs.db", ".eidex-cache/", "EIDEX_AI_CONTEXT.md"]
+gitignore_entries = [".eidex.toml", ".eidex/"]
 '''
     
     with open(config_path, "w") as f:
@@ -86,8 +94,12 @@ gitignore_entries = [".eidex.toml", ".eidex-logs.db", ".eidex-cache/", "EIDEX_AI
     print("You can customize these settings by editing eidex.toml")
 
 
+def create_ai_context_file():
     """Create a comprehensive AI context file for Eidex usage."""
-    context_path = os.path.join(get_repo_root(), "EIDEX_AI_CONTEXT.md")
+    # Ensure .eidex directory exists
+    ensure_eidex_directory()
+    
+    context_path = os.path.join(get_repo_root(), ".eidex", "AI_CONTEXT.md")
     
     context_content = '''# Eidex AI Agent Context Guide
 
@@ -98,10 +110,11 @@ gitignore_entries = [".eidex.toml", ".eidex-logs.db", ".eidex-cache/", "EIDEX_AI
 ## 🚀 Key Features
 
 - **Branch-Aware Logging**: Automatically associates logs with current Git branch
-- **SQLite Storage**: Lightweight, repo-specific database (`.eidex-logs.db`)
-- **Git Integration**: Automatically adds database to `.gitignore`
+- **SQLite Storage**: Lightweight, repo-specific database (`.eidex/.eidex-logs.db`)
+- **Git Integration**: Automatically adds `.eidex/` directory to `.gitignore`
 - **CLI & Python API**: Both command-line and programmatic interfaces
 - **Configuration**: Customizable via `eidex.toml` file
+- **Organized Structure**: All generated files stored in `.eidex/` directory
 
 ## 📚 How to Use Eidex
 
@@ -171,9 +184,23 @@ eidex show_config
 eidex init_config
 ```
 
-## 🔧 Configuration
+## 📁 Directory Structure
 
-Eidex automatically creates an `eidex.toml` configuration file on first run. Key settings:
+Eidex organizes generated files for a clean repository structure:
+
+```
+repository/
+├── eidex.toml              # Configuration file (top-level)
+├── .eidex/                 # Generated files directory
+│   ├── .eidex-logs.db      # SQLite database
+│   ├── AI_CONTEXT.md       # AI agent context file
+│   └── .eidex-cache/       # Cache directory (if used)
+└── .gitignore              # Git ignore file
+```
+
+The `.eidex/` directory is automatically added to `.gitignore` to prevent committing generated files.
+
+## 🔧 Configuration
 
 ```toml
 [database]
@@ -396,6 +423,7 @@ print("Work distribution:", work_types)
 - Run `eidex --help` for command overview
 - Use `eidex show_config` to check settings
 - Check the `eidex.toml` file for configuration
+- AI context file is located at `.eidex/AI_CONTEXT.md`
 
 ## 🎯 Quick Reference
 
@@ -428,7 +456,7 @@ def load_config():
         create_default_config()
     
     # Create AI context file if it doesn't exist
-    context_path = os.path.join(get_repo_root(), "EIDEX_AI_CONTEXT.md")
+    context_path = os.path.join(get_repo_root(), ".eidex", "AI_CONTEXT.md")
     if not os.path.exists(context_path):
         create_ai_context_file()
         print(f"Created AI context file: {context_path}")
@@ -471,7 +499,7 @@ def get_repo_root():
         return repo.working_dir
     except GitCommandError:
         raise ValueError(
-            "Not in a Git repository. Momento requires a Git repo to store logs."
+            "Not in a Git repository. Eidex requires a Git repo to store logs."
         )
 
 
@@ -479,11 +507,14 @@ def get_db_path():
     """Get the path to the repo-specific SQLite DB."""
     repo_root = get_repo_root()
     db_filename = get_config_value("database", "filename", ".eidex-logs.db")
-    return os.path.join(repo_root, db_filename)
+    return os.path.join(repo_root, ".eidex", db_filename)
 
 
 def ensure_db():
     """Initialize SQLite DB with table and indexes, add to .gitignore."""
+    # Ensure .eidex directory exists
+    ensure_eidex_directory()
+    
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -507,7 +538,7 @@ def ensure_db():
     # Add to .gitignore if configured to do so
     if get_config_value("git", "auto_add_to_gitignore", True):
         gitignore_path = os.path.join(get_repo_root(), ".gitignore")
-        gitignore_entries = get_config_value("git", "gitignore_entries", [".eidex-logs.db"])
+        gitignore_entries = get_config_value("git", "gitignore_entries", [".eidex/"])
         
         if os.path.exists(gitignore_path):
             with open(gitignore_path, "r+") as f:
