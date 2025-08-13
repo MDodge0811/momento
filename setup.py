@@ -18,6 +18,7 @@ setup(
             "flake8>=7.0.0",
             "black>=25.0.0",
             "isort>=6.0.0",
+            "mypy>=1.17.0",
         ],
     },
     description="Branch-aware AI logging for development workflows",

@@ -69,7 +69,7 @@ def get_current_branch():
         raise ValueError("Not in a Git repository. Eidex requires a Git repo.")
 
 
-def log_work(message: str, extra_info: dict = None):
+def log_work(message: str, extra_info: dict | None = None):
     """Log an AI action for the current branch."""
     ensure_db()
     branch = get_current_branch()
@@ -84,7 +84,7 @@ def log_work(message: str, extra_info: dict = None):
     conn.close()
 
 
-def fetch_branch_logs(branch: str = None, limit: int = 50) -> list[dict]:
+def fetch_branch_logs(branch: str | None = None, limit: int = 50) -> list[dict]:
     """Fetch logs for the current or specified branch, newest first."""
     ensure_db()
     if branch is None:

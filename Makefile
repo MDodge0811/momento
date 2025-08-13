@@ -50,6 +50,22 @@ lint-check:  ## Check linting without fixing
 		echo "flake8 not found. Install with: pip install flake8"; \
 	fi
 
+type-check:  ## Run type checking with mypy
+	@echo "Running type checking with mypy..."
+	@if command -v mypy >/dev/null 2>&1; then \
+		mypy .; \
+	else \
+		echo "mypy not found. Install with: pip install mypy"; \
+	fi
+
+type-check-strict:  ## Run strict type checking with mypy
+	@echo "Running strict type checking with mypy..."
+	@if command -v mypy >/dev/null 2>&1; then \
+		mypy --strict .; \
+	else \
+		echo "mypy not found. Install with: pip install mypy"; \
+	fi
+
 format:  ## Format code with black and isort
 	@echo "Running isort..."
 	@if command -v isort >/dev/null 2>&1; then \
@@ -86,7 +102,7 @@ imports:  ## Sort imports with isort
 		echo "isort not found. Install with: pip install isort"; \
 	fi
 
-check: test lint  ## Run tests and linting
+check: test lint type-check  ## Run tests, linting, and type checking
 	@echo "✅ All checks passed!"
 
 dev-setup: install-test-deps install  ## Set up development environment
