@@ -46,8 +46,8 @@ class TestEidex:
 
     def test_get_db_path(self):
         """Test database path generation."""
-        with patch("eidex.get_repo_root") as mock_repo, \
-             patch("eidex.get_config_value") as mock_config:
+        with patch("eidex.database.get_repo_root") as mock_repo, \
+             patch("eidex.database.get_config_value") as mock_config:
             mock_repo.return_value = "/test/repo"
             mock_config.return_value = ".eidex-logs.db"
             db_path = eidex.get_db_path()
@@ -115,7 +115,7 @@ class TestEidex:
     def test_get_current_branch_outside_git(self):
         """Test error when not in git repository."""
         # Mock the Git repository detection to simulate being outside a git repo
-        with patch("eidex.Repo") as mock_repo_class:
+        with patch("git.Repo") as mock_repo_class:
             # Make the Repo constructor raise GitCommandError
             from git import GitCommandError
 
