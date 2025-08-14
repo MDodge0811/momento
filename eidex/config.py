@@ -58,21 +58,6 @@ def load_config() -> Dict[str, Any]:
     """Load configuration from eidex.toml, creating default if needed."""
     config_path = get_config_path()
 
-    # Create default config if it doesn't exist
-    if not os.path.exists(config_path):
-        from .file_generators import create_default_config
-        create_default_config()
-
-    # Create AI context file if it doesn't exist
-    context_path = os.path.join(get_repo_root(), ".eidex", "AI_CONTEXT.md")
-    if not os.path.exists(context_path):
-        from .file_generators import create_ai_context_file
-        create_ai_context_file()
-        print(f"Created AI context file: {context_path}")
-        print(
-            "AI agents can now reference this file for comprehensive usage instructions."
-        )
-
     # Parse TOML file if available
     if _tomllib is not None:
         try:
@@ -98,6 +83,19 @@ def load_config() -> Dict[str, Any]:
 
 
 def get_config_value(section: str, key: str, default: Any = None) -> Any:
-    """Get a configuration value from the specified section."""
+    """Get a configuration value from the specified section.
+    
+    Args:
+        section: Configuration section name
+        key: Configuration key name
+        default: Default value if not found
+        
+    Returns:
+        Configuration value or default
+        
+    Note:
+        This function first checks the loaded configuration, then falls back
+        to the default configuration if the key is not found.
+    """
     config = load_config()
     return config.get(section, {}).get(key, default)

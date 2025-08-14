@@ -62,7 +62,19 @@ def ensure_db() -> str:
 
 
 def log_work(message: str, extra_info: Dict[str, Any] = None) -> None:
-    """Log an AI action for the current branch."""
+    """Log an AI action for the current branch.
+    
+    Args:
+        message: Description of the AI action performed
+        extra_info: Optional structured data about the action
+        
+    Returns:
+        None (logs are stored in the database)
+        
+    Note:
+        This function automatically ensures the database exists and handles
+        cleanup of old logs based on configuration settings.
+    """
     ensure_db()
     branch = get_current_branch()
     extra_json = json.dumps(extra_info) if extra_info else None
@@ -104,7 +116,19 @@ def log_work(message: str, extra_info: Dict[str, Any] = None) -> None:
 def fetch_branch_logs(
     branch: str = None, limit: int = None
 ) -> List[Dict[str, Any]]:
-    """Fetch logs for the current or specified branch, newest first."""
+    """Fetch logs for the current or specified branch, newest first.
+    
+    Args:
+        branch: Branch name (default: current branch)
+        limit: Maximum number of logs to return (default: from config)
+        
+    Returns:
+        List of log entries with timestamp, branch, message, and extra data
+        
+    Note:
+        If no limit is specified, uses the default_limit from configuration.
+        Returns empty list if limit is <= 0.
+    """
     ensure_db()
     if branch is None:
         branch = get_current_branch()
@@ -143,7 +167,15 @@ def fetch_branch_logs(
 
 
 def cleanup_deleted_branches() -> int:
-    """Delete logs for branches that no longer exist."""
+    """Delete logs for branches that no longer exist.
+    
+    Returns:
+        Number of deleted log entries
+        
+    Note:
+        This function compares logged branches with existing Git branches
+        and removes logs for branches that have been deleted.
+    """
     ensure_db()
     from git import Repo
     repo = Repo(search_parent_directories=True)

@@ -13,7 +13,15 @@ def ensure_eidex_directory() -> str:
 
 
 def create_default_config() -> str:
-    """Create a default eidex.toml configuration file."""
+    """Create a default eidex.toml configuration file.
+    
+    Returns:
+        Path to the created configuration file
+        
+    Note:
+        This function creates a comprehensive configuration file with all
+        default settings and helpful comments for customization.
+    """
     config_path = get_config_path()
 
     config_content = """# Eidex Configuration File
@@ -57,7 +65,15 @@ gitignore_entries = [".eidex.toml", ".eidex/"]
 
 
 def create_ai_context_file() -> str:
-    """Create a comprehensive AI context file for Eidex usage."""
+    """Create a comprehensive AI context file for Eidex usage.
+    
+    Returns:
+        Path to the created AI context file
+        
+    Note:
+        This function generates a detailed AI context file that provides
+        comprehensive instructions and examples for AI agents using Eidex.
+    """
     # Ensure .eidex directory exists
     ensure_eidex_directory()
 
