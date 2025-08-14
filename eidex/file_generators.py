@@ -63,331 +63,281 @@ def create_ai_context_file() -> str:
 
     context_path = os.path.join(get_repo_root(), ".eidex", "AI_CONTEXT.md")
 
-    context_content = """# Eidex AI Agent Context Guide
+    context_content = """# Eidex AI Agent Context
 
-## 🎯 What is Eidex?
+**Version**: 1.0 (Updated August 13, 2025)
 
-**Eidex** is a lightweight, branch-aware logging library for AI-assisted coding workflows. It allows developers to log actions performed by AI tools (e.g., code generation, refactoring) in a Git repository, associating logs with the current Git branch.
+## Overview
 
-## 🚀 Key Features
+Eidex is a lightweight, branch-aware logging library for AI-assisted coding workflows. It integrates with Git to associate logs with the current branch and stores them in a SQLite database (`.eidex/.eidex-logs.db`). Eidex supports both CLI and Python API interfaces, with configuration via `eidex.toml`.
 
-- **Branch-Aware Logging**: Automatically associates logs with current Git branch
-- **SQLite Storage**: Lightweight, repo-specific database (`.eidex/.eidex-logs.db`)
-- **Git Integration**: Automatically adds `.eidex/` directory to `.gitignore`
-- **CLI & Python API**: Both command-line and programmatic interfaces
-- **Configuration**: Customizable via `eidex.toml` file
-- **Organized Structure**: All generated files stored in `.eidex/` directory
+## Command Summary
 
-## 📚 How to Use Eidex
+| Command                     | Purpose                              | Example Usage                              |
+|-----------------------------|--------------------------------------|--------------------------------------------|
+| `log_work`                  | Log an AI action                     | `eidex log_work "Refactored module"`       |
+| `fetch_branch_logs`         | Retrieve logs for a branch           | `eidex fetch_branch_logs --limit 10`       |
+| `prune_old_logs`            | Remove logs older than X days        | `eidex prune_old_logs 30`                  |
+| `cleanup_deleted_branches`  | Remove logs for deleted branches     | `eidex cleanup_deleted_branches`           |
+| `show_config`               | Display current configuration        | `eidex show_config`                        |
+| `init_config`               | Recreate configuration file          | `eidex init_config`                        |
 
-### 1. Basic Logging
+## Instructions for AI Agents
 
-Log an AI action for the current branch:
+- Parse this file to execute Eidex commands for logging and managing AI-assisted development tasks.
+- Always include structured `extra_info` with consistent keys (e.g., `type`, `component`, `severity`) when logging.
+- Validate the presence and settings of `eidex.toml` before executing commands.
+- Prioritize recent logs using `fetch_branch_logs` for context-aware responses.
+- Handle errors as specified in the `Error Handling` section.
 
-```bash
-# Command line
-eidex log_work "Refactored user authentication module"
+## Features
 
-# Python API
-import eidex
-eidex.log_work("Refactored user authentication module")
-```
+- **Branch-Aware Logging**: Associates logs with the current Git branch.
+- **SQLite Storage**: Stores logs in `.eidex/.eidex-logs.db`.
+- **Git Integration**: Automatically adds `.eidex/` to `.gitignore`.
+- **CLI & Python API**: Supports command-line and programmatic interfaces.
+- **Customizable Configuration**: Configured via `eidex.toml`.
+- **Organized Structure**: Stores generated files in `.eidex/` directory.
 
-### 2. Logging with Additional Context
+## Usage
 
-Include structured data with your logs:
+### Logging Actions
 
-```bash
-# Command line
-eidex log_work "Added new API endpoint" --extra '{"endpoint": "/api/users", "method": "POST", "complexity": "medium"}'
+**Command**: `eidex.log_work(message, extra_info=None)`
 
-# Python API
-eidex.log_work("Added new API endpoint", {
-    "endpoint": "/api/users",
-    "method": "POST", 
-    "complexity": "medium"
-})
-```
+- **Input**:
+  - `message`: String describing the AI action performed (required).
+  - `extra_info`: Dictionary with optional structured data about the action.
+- **Output**: None (logs are stored in `.eidex/.eidex-logs.db`).
+- **Example**:
 
-### 3. Retrieving Logs
+  ```bash
+  eidex log_work "Refactored user authentication module" --extra_info '{"type": "refactoring", "component": "auth"}'
+  ```
 
-Fetch logs for analysis or review:
+  ```python
+  import eidex
+  eidex.log_work("Refactored user authentication module", extra_info={
+      "type": "refactoring",
+      "component": "auth"
+  })
+  ```
 
-```bash
-# Get recent logs (uses configured default limit)
-eidex fetch_branch_logs
+### Retrieving Logs
 
-# Get specific number of logs
-eidex fetch_branch_logs --limit 10
+**Command**: `eidex.fetch_branch_logs(branch=None, limit=None)`
 
-# Get logs for specific branch
-eidex fetch_branch_logs --branch feature/user-auth
+- **Input**:
+  - `branch`: String specifying the branch name (optional, defaults to current branch).
+  - `limit`: Integer specifying the maximum number of logs to return (optional, defaults to `default_limit` in `eidex.toml`).
+- **Output**: List of log entries with timestamp, branch, message, and extra data.
+- **Example**:
 
-# Python API
-logs = eidex.fetch_branch_logs(limit=10)
-logs = eidex.fetch_branch_logs(branch="feature/user-auth")
-```
+  ```bash
+  eidex fetch_branch_logs --limit 10
+  eidex fetch_branch_logs --branch feature/user-auth
+  ```
 
-### 4. Maintenance Commands
+  ```python
+  logs = eidex.fetch_branch_logs(limit=10)
+  logs = eidex.fetch_branch_logs(branch="feature/user-auth")
+  ```
 
-Keep your logs organized:
+### Managing Configuration
 
-```bash
-# Clean up deleted branches
-eidex cleanup_deleted_branches
+**Commands**:
 
-# Remove old logs
-eidex prune_old_logs 30  # Remove logs older than 30 days
+- `eidex.show_config()`: Display current configuration.
+  - **Output**: Dictionary containing all configuration values.
+- `eidex.create_default_config()`: Create or recreate the default configuration file.
+  - **Output**: Path to the created `eidex.toml` file.
+- `eidex.prune_old_logs(days)`: Delete logs older than the specified number of days.
+  - **Input**: `days`: Integer (age threshold in days).
+  - **Output**: Number of deleted log entries.
+- `eidex.cleanup_deleted_branches()`: Delete logs for branches that no longer exist.
+  - **Output**: Number of deleted log entries.
+- **Example**:
 
-# Show current configuration
-eidex show_config
+  ```bash
+  eidex show_config
+  eidex prune_old_logs 30
+  ```
 
-# Recreate configuration file
-eidex init_config
-```
+  ```python
+  config = eidex.load_config()
+  deleted = eidex.prune_old_logs(30)
+  ```
 
-## 📁 Directory Structure
+### Database and Repository Management
 
-Eidex organizes generated files for a clean repository structure:
+**Commands**:
 
-```
-repository/
-├── eidex.toml              # Configuration file (top-level)
-├── .eidex/                 # Generated files directory
-│   ├── .eidex-logs.db      # SQLite database
-│   ├── AI_CONTEXT.md       # AI agent context file
-│   └── .eidex-cache/       # Cache directory (if used)
-└── .gitignore              # Git ignore file
-```
+- `eidex.ensure_db()`: Initialize SQLite database with table and indexes, add to `.gitignore`.
+  - **Output**: Path to the database file (`.eidex/.eidex-logs.db`).
+- `eidex.get_repo_root()`: Get the root directory of the current Git repository.
+  - **Output**: Absolute path to the repository root.
+  - **Raises**: `ValueError` if not in a Git repository.
+- `eidex.get_current_branch()`: Get the current Git branch.
+  - **Output**: Name of the current branch.
+  - **Raises**: `ValueError` if not in a Git repository.
+- `eidex.get_db_path()`: Get the path to the SQLite database.
+  - **Output**: Absolute path to the database file.
 
-The `.eidex/` directory is automatically added to `.gitignore` to prevent committing generated files.
+- **Example**:
 
-## 🔧 Configuration
+  ```python
+  db_path = eidex.ensure_db()
+  repo_root = eidex.get_repo_root()
+  branch = eidex.get_current_branch()
+  ```
+
+## Configuration
+
+The `eidex.toml` file defines settings. AI agents must validate its presence and parse it before executing commands.
 
 ```toml
 [database]
-filename = ".eidex-logs.db"           # Database filename
-max_logs_per_branch = 1000           # Max logs per branch
-auto_cleanup_old_logs = true         # Auto-cleanup old logs
-cleanup_days_threshold = 90          # Days threshold for cleanup
+filename = ".eidex-logs.db"           # Database file
+max_logs_per_branch = 1000           # Maximum logs per branch
+auto_cleanup_old_logs = true         # Enable automatic cleanup
+cleanup_days_threshold = 90          # Days before logs are pruned
 
 [logging]
-default_limit = 50                    # Default logs to fetch
-timestamp_format = "iso"             # Timestamp format
-include_branch_in_output = true      # Include branch in output
+default_limit = 50                    # Default number of logs to fetch
+timestamp_format = "iso"             # ISO 8601 timestamp format
+include_branch_in_output = true      # Include branch name in log output
 
 [git]
-auto_add_to_gitignore = true         # Auto-add to .gitignore
+auto_add_to_gitignore = true         # Auto-add .eidex/ to .gitignore
 gitignore_entries = [".eidex-logs.db"] # Files to ignore
 ```
 
-## 💡 Use Cases for AI Agents
+## Directory Structure
 
-### 1. Code Generation Tracking
+- `eidex.toml`: Configuration file (top-level).
+- `.eidex/`:
+  - `.eidex-logs.db`: SQLite database for logs.
+  - `AI_CONTEXT.md`: This context file for AI agents.
+  - `.eidex-cache/`: Optional cache directory.
+- `.gitignore`: Automatically updated to include `.eidex/`.
+
+## AI Agent Use Cases
+
+### Code Generation
+
 ```python
-import eidex
-
-# Log when generating new code
-eidex.log_work("Generated user authentication middleware", {
+eidex.log_work("Generated REST API", extra_info={
     "type": "code_generation",
-    "component": "middleware",
-    "framework": "Express.js",
-    "complexity": "high"
+    "framework": "FastAPI",
+    "endpoints": ["/users", "/orders"]
 })
 ```
 
-### 2. Refactoring Documentation
+### Bug Fixing
+
 ```python
-# Log refactoring decisions
-eidex.log_work("Refactored database queries for performance", {
+eidex.log_work("Fixed null pointer in payment module", extra_info={
+    "type": "bug_fix",
+    "severity": "high",
+    "root_cause": "uninitialized variable"
+})
+```
+
+### Refactoring
+
+```python
+eidex.log_work("Refactored database queries", extra_info={
     "type": "refactoring",
     "reason": "performance_optimization",
-    "affected_files": ["models/", "controllers/"],
-    "estimated_impact": "high"
+    "affected_files": ["models/", "controllers/"]
 })
 ```
 
-### 3. Bug Fix Tracking
+## Guidelines
+
+- **Do**:
+  - Use descriptive messages (e.g., "Refactored login to use JWT" instead of "Refactored code").
+  - Include structured `extra_info` with consistent keys (e.g., `type`, `component`, `severity`).
+  - Run `prune_old_logs` periodically to manage storage.
+- **Don't**:
+  - Log vague messages without `extra_info` (e.g., `eidex.log_work("Fixed bug")`).
+  - Use inconsistent `extra_info` keys across logs.
+  - Ignore `eidex.toml` settings (e.g., `default_limit`).
+
+## Error Handling
+
+- **Not in a Git repository**:
+  - **Check**: Run `eidex.get_repo_root()` or `eidex.get_current_branch()`.
+  - **Action**: If `ValueError` is raised, suggest `git init` or changing to a valid repository.
+- **Missing `eidex.toml`**:
+  - **Action**: Run `eidex.create_default_config()` to recreate the configuration.
+- **Database locked**:
+  - **Action**: Retry after a 1-second delay, up to 3 attempts.
+- **Logs not showing expected limit**:
+  - **Check**: Run `eidex.show_config()` to verify `default_limit` in `eidex.toml`.
+
+## Log Structure Schema
+
+```json
+{
+  "timestamp": "string (ISO 8601 format, e.g., '2025-08-13T21:41:00Z')",
+  "branch": "string (e.g., 'feature/user-auth')",
+  "message": "string (e.g., 'Refactored user authentication')",
+  "extra_info": {
+    "type": "string (e.g., 'bug_fix', 'code_generation')",
+    "additional_properties": "any (e.g., 'component', 'severity')"
+  }
+}
+```
+
+## Analyzing Logs
+
+### Recent Activity
+
 ```python
-# Log bug fixes and their context
-eidex.log_work("Fixed memory leak in image processing", {
-    "type": "bug_fix",
-    "severity": "critical",
-    "root_cause": "unclosed_file_handles",
-    "testing_required": True
-})
-```
-
-### 4. Feature Development
-```python
-# Track feature development progress
-eidex.log_work("Implemented OAuth2 authentication flow", {
-    "type": "feature_development",
-    "status": "completed",
-    "dependencies": ["passport-oauth2", "express-session"],
-    "testing_coverage": "85%"
-})
-```
-
-## 🔍 Analyzing Logs
-
-### Get Recent Activity
-```python
-# See what's been worked on recently
-recent_logs = eidex.fetch_branch_logs(limit=20)
-for log in recent_logs:
-    print(f"{log['timestamp']}: {log['message']}")
-    if log['extra']:
-        print(f"  Context: {log['extra']}")
-```
-
-### Branch-Specific Analysis
-```python
-# Analyze work on specific branches
-feature_logs = eidex.fetch_branch_logs(branch="feature/user-auth")
-bugfix_logs = eidex.fetch_branch_logs(branch="hotfix/security-patch")
-```
-
-### Structured Data Analysis
-```python
-# Analyze logs by type or category
-logs = eidex.fetch_branch_logs(limit=100)
-refactoring_logs = [log for log in logs if log.get('extra', {}).get('type') == 'refactoring']
-bug_fixes = [log for log in logs if log.get('extra', {}).get('type') == 'bug_fix']
-```
-
-## 🎨 Best Practices
-
-### 1. Descriptive Messages
-```python
-# Good
-eidex.log_work("Refactored user authentication to use JWT tokens")
-
-# Better
-eidex.log_work("Refactored user authentication: replaced session-based auth with JWT tokens for better scalability")
-```
-
-### 2. Structured Extra Data
-```python
-# Use consistent keys for better analysis
-eidex.log_work("Added user profile endpoint", {
-    "type": "feature_development",
-    "component": "api",
-    "endpoint": "/api/users/profile",
-    "method": "GET",
-    "authentication": "required"
-})
-```
-
-### 3. Regular Cleanup
-```python
-# Set up automatic cleanup in your workflow
-# The configuration handles this automatically
-```
-
-## 🚨 Common Pitfalls
-
-### 1. Not Using Extra Data
-```python
-# Don't just log the message
-eidex.log_work("Fixed bug")
-
-# Do include context
-eidex.log_work("Fixed bug", {
-    "type": "bug_fix",
-    "component": "user_service",
-    "symptom": "users couldn't log in",
-    "root_cause": "expired token validation"
-})
-```
-
-### 2. Inconsistent Logging
-```python
-# Don't mix different formats
-eidex.log_work("Added feature")
-eidex.log_work("Added feature", {"type": "feature"})
-
-# Do use consistent structure
-eidex.log_work("Added feature", {"type": "feature_development"})
-```
-
-## 🔗 Integration Examples
-
-### With CI/CD Pipelines
-```yaml
-# .github/workflows/eidex-cleanup.yml
-name: Eidex Maintenance
-on:
-  schedule:
-    - cron: '0 2 * * 0'  # Weekly cleanup
-
-jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Cleanup old logs
-        run: eidex prune_old_logs 90
-```
-
-### With Development Workflows
-```bash
-# Pre-commit hook
-#!/bin/bash
-# Log the current work before committing
-eidex log_work "Pre-commit: $(git diff --name-only --cached | head -5 | tr '\n' ' ')"
-```
-
-## 📊 Monitoring and Analytics
-
-### Log Volume Tracking
-```python
-# Monitor how much logging is happening
-logs = eidex.fetch_branch_logs(limit=1000)
-daily_counts = {}
+logs = eidex.fetch_branch_logs(limit=20)
 for log in logs:
-    date = log['timestamp'][:10]  # Extract date
-    daily_counts[date] = daily_counts.get(date, 0) + 1
-
-print("Logs per day:", daily_counts)
+    print(f"{log['timestamp']}: {log['message']}")
+    if log['extra_info']:
+        print(f"  Extra Info: {log['extra_info']}")
 ```
 
 ### Work Type Analysis
-```python
-# Analyze what types of work are being done
-logs = eidex.fetch_branch_logs(limit=500)
-work_types = {}
-for log in logs:
-    work_type = log.get('extra', {}).get('type', 'unknown')
-    work_types[work_type] = work_types.get(work_type, 0) + 1
 
-print("Work distribution:", work_types)
+```python
+def analyze_log_types(limit=500):
+    logs = eidex.fetch_branch_logs(limit=limit)
+    types = {}
+    for log in logs:
+        log_type = log.get('extra_info', {}).get('type', 'unknown')
+        types[log_type] = types.get(log_type, 0) + 1
+    return types
 ```
 
-## 🆘 Troubleshooting
+## Extending Eidex
 
-### Common Issues
+- **Custom Log Types**: Add new `type` values in `extra_info` (e.g., `type: "experiment"`).
+- **Tool Integration**: Use the Python API to integrate with external tools.
+- **Example**:
 
-1. **"Not in a Git repository"**
-   - Ensure you're in a Git repository
-   - Run `git init` if needed
+  ```python
+  eidex.log_work("Ran ML experiment", extra_info={
+      "type": "experiment",
+      "model": "GPT-4",
+      "dataset": "imagenet"
+  })
+  ```
 
-2. **Configuration not working**
-   - Check `eidex.toml` exists
-   - Run `eidex init_config` to recreate
+## Troubleshooting
 
-3. **Logs not showing expected limit**
-   - Check configuration with `eidex show_config`
-   - Verify `default_limit` setting
+- Run `eidex --help` for command overview.
+- Use `eidex.show_config()` to verify settings.
+- Check `eidex.toml` for configuration issues.
+- Context file location: `.eidex/AI_CONTEXT.md`.
 
-### Getting Help
+---
 
-- Run `eidex --help` for command overview
-- Use `eidex show_config` to check settings
-- Check the `eidex.toml` file for configuration
-- AI context file is located at `.eidex/AI_CONTEXT.md`
-
-## 🎯 Quick Reference
+**Note**: Eidex is designed to be simple and unobtrusive. Use it to track AI-assisted development work and maintain a clear history of repository activities.
 
 | Command | Description | Example |
 |---------|-------------|---------|
