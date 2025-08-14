@@ -23,3 +23,4 @@ exclude =
     .mypy_cache
 per-file-ignores =
     __init__.py:F401
+    eidex.py:F811
