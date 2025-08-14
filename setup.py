@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="eidex",
     version="0.1.0",
-    py_modules=["eidex"],
+    packages=["eidex"],
     install_requires=["gitpython>=3.1.0"],
     extras_require={
         "test": [

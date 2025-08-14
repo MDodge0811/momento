@@ -286,47 +286,32 @@ class TestEidexCLI:
 
     def test_cli_log_work(self):
         """Test CLI log_work command."""
-        # Test basic logging using the eidex.py file directly
-        eidex_script = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "eidex.py"
-        )
-        result = os.system(f'python3 {eidex_script} log_work "CLI test message"')
+        # Test basic logging using the installed eidex command
+        result = os.system('eidex log_work "CLI test message"')
         assert result == 0
 
     def test_cli_log_work_with_extra(self):
         """Test CLI log_work command with extra data."""
         extra_json = '{"file": "test.py", "action": "created"}'
-        eidex_script = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "eidex.py"
-        )
         result = os.system(
-            f"python3 {eidex_script} log_work \"CLI test message\" --extra '{extra_json}'"
+            f'eidex log_work "CLI test message" --extra \'{extra_json}\''
         )
         assert result == 0
 
     def test_cli_fetch_branch_logs(self):
         """Test CLI fetch_branch_logs command."""
         # Test fetching
-        eidex_script = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "eidex.py"
-        )
-        result = os.system(f"python3 {eidex_script} fetch_branch_logs")
+        result = os.system("eidex fetch_branch_logs")
         assert result == 0
 
     def test_cli_cleanup_deleted_branches(self):
         """Test CLI cleanup_deleted_branches command."""
-        eidex_script = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "eidex.py"
-        )
-        result = os.system(f"python3 {eidex_script} cleanup_deleted_branches")
+        result = os.system("eidex cleanup_deleted_branches")
         assert result == 0
 
     def test_cli_prune_old_logs(self):
         """Test CLI prune_old_logs command."""
-        eidex_script = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "eidex.py"
-        )
-        result = os.system(f"python3 {eidex_script} prune_old_logs 30")
+        result = os.system("eidex prune_old_logs 30")
         assert result == 0
 
 
