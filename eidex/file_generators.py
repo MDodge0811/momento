@@ -85,6 +85,8 @@ Eidex is a lightweight, branch-aware logging library for AI-assisted coding work
 ## Instructions for AI Agents
 
 - Parse this file to execute Eidex commands for logging and managing AI-assisted development tasks.
+- After every prompt, call `log_work` to document the actions you've taken.
+- In your log, include an overview, files modified, reasoning, and any other metadata you find important.
 - Always include structured `extra_info` with consistent keys (e.g., `type`, `component`, `severity`) when logging.
 - Validate the presence and settings of `eidex.toml` before executing commands.
 - Prioritize recent logs using `fetch_branch_logs` for context-aware responses.
