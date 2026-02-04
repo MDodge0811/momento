@@ -51,7 +51,20 @@ pip install eidex
 
 ## Usage
 
-Momento provides both a CLI and a Python API for logging and retrieving AI actions in a Git repository. Logs are stored in `.eidex/.eidex-logs.db` in the repo’s root, automatically added to `.gitignore`.
+Eidex provides both a CLI and a Python API for logging and retrieving AI actions in a Git repository. Logs are stored in `.eidex/.eidex-logs.db` in the repo’s root, automatically added to `.gitignore`.
+
+### User Rules
+Create a new rule for either your repo or you user that is default for every agent interaction:
+
+```md
+- When updating context or performing system analysis, you MUST follow this sequence:
+  1. Log the start of the context update with eidex `eidex log_work`
+  1.1. Read .eidex/AI_CONTEXT.md as needed for library usage instructions.
+  2. IMMEDIATELY call `eidex fetch_branch_logs` (using defaults, no args)
+  3. Continue with your analysis and examination
+  4. Log the completion of the context update
+  This sequence is mandatory and cannot be skipped or reordered.
+  ```
 
 ### Command-Line Interface (CLI)
 Run `eidex` commands from any Git repository:

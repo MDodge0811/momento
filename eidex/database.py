@@ -9,7 +9,7 @@ from typing import List, Dict, Any
 from .config import get_config_value, get_repo_root
 from .file_generators import ensure_eidex_directory
 
-
+# TODO: Should we ensure the eidex directory exists here?
 def get_db_path() -> str:
     """Get the path to the repo-specific SQLite DB."""
     repo_root = get_repo_root()
@@ -76,6 +76,10 @@ def log_work(message: str, extra_info: Dict[str, Any] = None) -> None:
         cleanup of old logs based on configuration settings.
     """
     ensure_db()
+    # TODO: This function should also ensure that config and context files are set up and up to date.
+    # We need to be careful with that because we don't want to overwrite the user's files. 
+    # The way we should handle this is we should check if the files exist, and if they don't we should return an error that tells the agent to call the function to create them.
+    # We should also check if the files are up to date, and if they are not we should return an error that tells the agent to call the function to update them.
     branch = get_current_branch()
     extra_json = json.dumps(extra_info) if extra_info else None
     conn = sqlite3.connect(get_db_path())

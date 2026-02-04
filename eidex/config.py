@@ -47,7 +47,7 @@ def get_repo_root() -> str:
             "Not in a Git repository. Eidex requires a Git repo to store logs."
         )
 
-
+# TODO: It's weird that this is specific to the eidex.toml file. This should either be in file_generators.py, or it should just return the base path and we should append the file to it in the caller.
 def get_config_path() -> str:
     """Get the path to the eidex configuration file."""
     repo_root = get_repo_root()

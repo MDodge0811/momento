@@ -24,6 +24,7 @@ def create_default_config() -> str:
     """
     config_path = get_config_path()
 
+    # TODO: This should be a template file that we can use to generate the config file.
     config_content = """# Eidex Configuration File
 # This file contains customizable settings for the Eidex logging system
 
@@ -78,7 +79,8 @@ def create_ai_context_file() -> str:
     ensure_eidex_directory()
 
     context_path = os.path.join(get_repo_root(), ".eidex", "AI_CONTEXT.md")
-
+    
+    # TODO: This should be a template file that we can use to generate the context file.
     context_content = """# Eidex AI Agent Context
 
 **Version**: 1.0 (Updated August 13, 2025)
@@ -106,6 +108,7 @@ Eidex is a lightweight, branch-aware logging library for AI-assisted coding work
 - Always include structured `extra_info` with consistent keys (e.g., `type`, `component`, `severity`) when logging.
 - Validate the presence and settings of `eidex.toml` before executing commands.
 - Prioritize recent logs using `fetch_branch_logs` for context-aware responses.
+- Do not pass limit or branch args to `fetch_branch_logs` unless explicitly told to. Rely on defaults for this.
 - Handle errors as specified in the `Error Handling` section.
 
 ## Features
